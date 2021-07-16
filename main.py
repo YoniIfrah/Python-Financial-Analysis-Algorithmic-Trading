@@ -17,22 +17,19 @@ def VisualizingChart(Excel_File, stock):
     :param stock: string, Stock name
     :return: None
     """
-    figure, axis = plt.subplots(2, 2)
-    i, j, k = 0, 0, 0
+    print("please wait building charts from excel file...")
+    figure, axis = plt.subplots(2, 2) #figure is object and axis is the 2d graphs matrix
+    k = 0
+    arr = ['monthly', 'weekly', 'daily', '5min intraday']  # list of the time frames
 
-    while i < 2:
-        j = 0
-        while j < 2:
-            arr = ['monthly', 'weekly', 'daily', '5min intraday'] # list of the time frames
-            df = pd.read_excel(Excel_File, sheet_name=arr[k]) # take each time different dataframe from the excel file
-            #adding charts to the final display (plt.show)
-            axis[i, j].plot(df['date'], df['4. close'])
-            axis[i, j].set_xlabel("Dates")
-            axis[i, j].set_ylabel("$ Price")
-            axis[i, j].set_title(stock + " " + arr[k] + " closed price")
-            j += 1
+    for i in axis:
+        for chart in i:
+            df = pd.read_excel(Excel_File, sheet_name=arr[k])# take each time different dataframe from the excel file
+            chart.plot(df['date'], df['4. close'])
+            chart.set_xlabel("Dates")
+            chart.set_ylabel("$ Price")
+            chart.set_title(stock + " " + arr[k] + " closed price")
             k += 1
-        i += 1
     plt.tight_layout()
     plt.show()
 
@@ -73,7 +70,7 @@ def WriteToExcel(ts, stock):
         writer.close() #close the open file that left from the try
         if os.path.exists(ExcelName):#check if the file exist if true delete it
             os.remove(ExcelName)
-        raise Exception("Hi this is may be invalid stock!")
+        raise Exception("Hi this may be invalid stock!")
 
     print("Share stock information was successfully saved in Excel file !")
     return ExcelName
@@ -94,10 +91,4 @@ def API_To_Excel(stock):
 stock = input("enter the stock symbol: \n").upper()
 Excel_File = API_To_Excel(stock)
 VisualizingChart(Excel_File, stock)
-
-
-
-
-
-
 

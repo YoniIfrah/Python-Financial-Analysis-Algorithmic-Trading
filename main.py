@@ -24,11 +24,16 @@ def VisualizingChart(Excel_File, stock):
 
     for i in axis:
         for chart in i:
-            df = pd.read_excel(Excel_File, sheet_name=arr[k])# take each time different dataframe from the excel file
-            chart.plot(df['date'], df['4. close'])
+            # take each time different dataframe from the excel file
+            df = pd.read_excel(Excel_File, sheet_name=arr[k])
+            # if you want to add another lines to the chart add another line of code like this
+            chart.plot(df['date'], df['4. close'], color='brown', linewidth=1, label='close')
+            chart.plot(df['date'], df['2. high'], '--', color='green', linewidth=0.5, label='high') # the '--' is how to describe the line
+
             chart.set_xlabel("Dates")
             chart.set_ylabel("$ Price")
-            chart.set_title(stock + " " + arr[k] + " closed price")
+            chart.set_title(stock + " " + arr[k])
+            chart.legend(loc=0) # add the label string inside the chart
             k += 1
     plt.tight_layout()
     plt.show()

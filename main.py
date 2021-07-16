@@ -33,7 +33,7 @@ def VisualizingChart(Excel_File, stock):
             j += 1
             k += 1
         i += 1
-
+    plt.tight_layout()
     plt.show()
 
 

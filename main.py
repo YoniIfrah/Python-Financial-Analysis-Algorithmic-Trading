@@ -18,7 +18,7 @@ def VisualizingChart(Excel_File, stock):
     :return: None
     """
     print("please wait building charts from excel file...")
-    figure, axis = plt.subplots(2, 2) #figure is object and axis is the 2d graphs matrix
+    figure, axis = plt.subplots(2, 2, figsize=(12,8)) # figure is object and axis is the 2x2 graphs matrix
     k = 0
     arr = ['monthly', 'weekly', 'daily', '5min intraday']  # list of the time frames
 
@@ -28,13 +28,20 @@ def VisualizingChart(Excel_File, stock):
             df = pd.read_excel(Excel_File, sheet_name=arr[k])
             # if you want to add another lines to the chart add another line of code like this
             chart.plot(df['date'], df['4. close'], color='brown', linewidth=1, label='close')
-            chart.plot(df['date'], df['2. high'], '--', color='green', linewidth=0.5, label='high') # the '--' is how to describe the line
+            chart.plot(df['date'], df['2. high'], linestyle='--', color='green', alpha=0.5, linewidth=0.7, label='high') # the '--' is how to describe the line
 
+            #adding grid to the graph
+            chart.xaxis.grid(True)
+            chart.yaxis.grid(True)
+
+            #setting labels of the graphs
             chart.set_xlabel("Dates")
             chart.set_ylabel("$ Price")
             chart.set_title(stock + " " + arr[k])
             chart.legend(loc=0) # add the label string inside the chart
             k += 1
+
+
     plt.tight_layout()
     plt.show()
 

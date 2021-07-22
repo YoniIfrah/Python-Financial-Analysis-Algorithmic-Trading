@@ -20,15 +20,24 @@ def VisualizingChart(Excel_File, stock):
     print("please wait building charts from excel file...")
     figure, axis = plt.subplots(2, 2, figsize=(12,8)) # figure is object and axis is the 2x2 graphs matrix
     k = 0
-    arr = ['monthly', 'weekly', 'daily', '5min intraday']  # list of the time frames
+    arr = ['monthly', 'weekly', 'daily', '30min intraday']  # list of the time frames
 
     for i in axis:
         for chart in i:
             # take each time different dataframe from the excel file
             df = pd.read_excel(Excel_File, sheet_name=arr[k])
-            # if you want to add another lines to the chart add another line of code like this
-            chart.plot(df['date'], df['4. close'], color='brown', linewidth=1, label='close')
-            chart.plot(df['date'], df['2. high'], linestyle='--', color='green', alpha=0.5, linewidth=0.7, label='high') # the '--' is how to describe the line
+            # if you want to add another lines to the chart add another line of code like this:
+            chart.plot(df['date'], df['4. close'], linewidth=1, label='Close', alpha=0.7)
+
+            #upper = 13MA + 2*std(13)
+            chart.plot(df['date'], df.rolling(window=13).mean()['4. close'] + 2*df['4. close'].rolling(13).std(), label='Upper', alpha=0.3)
+
+            #lower = 13MA - 2*std(13)
+            chart.plot(df['date'], df.rolling(window=13).mean()['4. close'] - 2*df['4. close'].rolling(13).std(), label='Upper', alpha=0.3)
+
+
+            #MA of 13 closes
+            chart.plot(df['date'], df.rolling(window=13).mean()['4. close'], label='Close 13 MA')
 
             #adding grid to the graph
             chart.xaxis.grid(True)
@@ -49,13 +58,13 @@ def VisualizingChart(Excel_File, stock):
 def WriteToExcel(ts, stock):
     """
     here we will choose where to save our Excel file on the computer then
-    we are creating excel file of the daily, weekly, monthly, 5min intraday stock time frames in one excel when
+    we are creating excel file of the daily, weekly, monthly, 30min intraday stock time frames in one excel when
     each time frame has a page of his own
     :return:saved excel named by the stock
     """
     filePath = filedialog.askdirectory()+"\\"#choosing where to locate the excel file with GUI
     ExcelName = filePath+stock+".xlsx"
-
+    print("trying to write to excel file...")
     try:
         writer = pd.ExcelWriter(ExcelName, engine='xlsxwriter')
 
@@ -68,10 +77,10 @@ def WriteToExcel(ts, stock):
         daily_data ,tmp = ts.get_daily(symbol=stock)
         daily_data.to_excel(writer, sheet_name='daily')
 
-        five_min_data,tmp = ts.get_intraday(symbol=stock, interval='5min', outputsize='full')
-        five_min_data.to_excel(writer, sheet_name='5min intraday')
+        five_min_data,tmp = ts.get_intraday(symbol=stock, interval='30min', outputsize='full')
+        five_min_data.to_excel(writer, sheet_name='30min intraday')
 
-        for message in ['monthly', 'weekly', 'daily', '5min intraday']:
+        for message in ['monthly', 'weekly', 'daily', '30min intraday']:
             # changing the size of the columns to be bigger (that are date and volume)
             writer.sheets[message].set_column(0, 0, 25)#date
             writer.sheets[message].set_column(5, 5, 15)#volume
@@ -82,7 +91,7 @@ def WriteToExcel(ts, stock):
         writer.close() #close the open file that left from the try
         if os.path.exists(ExcelName):#check if the file exist if true delete it
             os.remove(ExcelName)
-        raise Exception("Hi this may be invalid stock!")
+        raise Exception("Hi this is may be invalid stock!")
 
     print("Share stock information was successfully saved in Excel file !")
     return ExcelName
@@ -90,13 +99,14 @@ def WriteToExcel(ts, stock):
 
 def API_To_Excel(stock):
     """
-    here we got API from https://www.alphavantage.co/ that gives us data on the stock market and in order to use that data
+    here we got API from https://www.alphavantage.co/ which gives us data on the stock market and in order to use that data
     we need to set TimeSeries(key=API, output_format='pandas') to a variable
     after that we will read symbol of stock from the user
     """
     api_key = 'DKEJIX81H7PKJ9FJ'
     ts =TimeSeries(key=api_key, output_format='pandas')
     return WriteToExcel(ts,stock)
+
 
 
 

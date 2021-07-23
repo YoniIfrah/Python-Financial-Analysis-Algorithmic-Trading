@@ -1,10 +1,35 @@
+from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 import os
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
+from mplfinance.original_flavor import candlestick_ohlc
+from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
+def Add_Upper_and_Lower(ax, df):
+    # upper = 13MA + 2*std(13)
+    ax.plot(df['Date'], df.rolling(window=13).mean()['Close'] + 2 * df['Close'].rolling(13).std(),
+            ls='--', label='Upper', alpha=0.3)
 
+    # lower = 13MA - 2*std(13)
+    ax.plot(df['Date'], df.rolling(window=13).mean()['Close'] - 2 * df['Close'].rolling(13).std(),
+            ls='--', label='Lower', alpha=0.3)
+
+def Add_MA(ax, df, time):
+    if time == 'weekly' or time == 'daily':
+        # MA of 34 closes
+        ax.plot(df['Date'], df.rolling(window=34).mean()['Close'], label='Close 34 MA', alpha=0.7, linewidth=0.5)
+        # MA of 55 closes
+        ax.plot(df['Date'], df.rolling(window=55).mean()['Close'], label='Close 55 MA', alpha=0.7, linewidth=0.5)
+
+        if time == 'daily':
+            # MA of 233 closes
+            ax.plot(df['Date'], df.rolling(window=233).mean()['Close'], label='Close 233 MA', alpha=0.7,
+                       linewidth=0.5)
+        else:
+            # MA of 13 closes
+            ax.plot(df['Date'], df.rolling(window=13).mean()['Close'], label='Close 13 MA', alpha=0.7, linewidth=0.5)
 
 
 def VisualizingChart(Excel_File, stock):
@@ -26,27 +51,9 @@ def VisualizingChart(Excel_File, stock):
             # if you want to add another lines to the chart add another line of code like this
             chart.plot(df['Date'], df['Close'], linewidth=1, label='Close')
 
-            #chart.plot.bar(df['Date'], df['Volume'], linewidth=1, label='Close', alpha=0.1)
-
-
-            #upper = 13MA + 2*std(13)
-            chart.plot(df['Date'], df.rolling(window=13).mean()['Close'] + 2*df['Close'].rolling(13).std(),ls='--', label='Upper', alpha=0.3)
-
-            #lower = 13MA - 2*std(13)
-            chart.plot(df['Date'], df.rolling(window=13).mean()['Close'] - 2*df['Close'].rolling(13).std(), ls='--', label='Lower', alpha=0.3)
-
-            if arr[k] == 'weekly' or arr[k] == 'daily':
-                # MA of 34 closes
-                chart.plot(df['Date'], df.rolling(window=34).mean()['Close'], label='Close 34 MA', alpha=0.7, linewidth=0.5)
-                # MA of 55 closes
-                chart.plot(df['Date'], df.rolling(window=55).mean()['Close'], label='Close 55 MA', alpha=0.7, linewidth=0.5)
-
-                if arr[k] == 'daily':
-                    # MA of 233 closes
-                    chart.plot(df['Date'], df.rolling(window=233).mean()['Close'], label='Close 233 MA', alpha=0.7, linewidth=0.5)
-                else:
-                    # MA of 13 closes
-                    chart.plot(df['Date'], df.rolling(window=13).mean()['Close'], label='Close 13 MA', alpha=0.7, linewidth=0.5)
+            # Adding indicators
+            Add_Upper_and_Lower(chart, df)
+            Add_MA(chart, df, arr[k])
 
 
             #adding grid to the graph
@@ -100,6 +107,7 @@ def WriteToExcel(df_daily, df_weekly, df_monthly, stock):
         writer.save()
 
     except:
+        print("cannot create the excel file... make sure the file is not open !")
         writer.close() #close the open file that left from the try
         if os.path.exists(ExcelName):#check if the file exist if true delete it
             os.remove(ExcelName)
@@ -107,6 +115,49 @@ def WriteToExcel(df_daily, df_weekly, df_monthly, stock):
 
     print("Share stock information was successfully saved in Excel file !")
     return (ExcelName, df_daily)
+
+
+def Candle_Stick(Excel_File, stock, time):
+    """
+    Display the stock graph with candle stick and indicators by the timeframe we got from the variable "time"
+    :param Excel_File: IO, Excel file path
+    :param stock: String, the name of the stock
+    :param time: String, the timeframe of the stock which is saved in the excel file by sheets
+    :return: None
+    """
+    df = pd.read_excel(Excel_File, sheet_name=time)
+
+    # Extracting Data for plotting
+    ohlc = df.loc[:, ['Date', 'Open', 'High', 'Low', 'Close']]
+    ohlc['Date'] = pd.to_datetime(ohlc['Date'])
+    ohlc['Date'] = ohlc['Date'].apply(date2num)
+    ohlc = ohlc.astype(float)
+
+    fig, ax = plt.subplots()
+
+    candlestick_ohlc(ax, ohlc.values, width=0.8, colorup='green', colordown='red', alpha=0.8)
+
+    # Setting labels & titles
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Price')
+    fig.suptitle(time + ' candlestick chart of ' + stock)
+
+    # adding grid to the graph
+    ax.xaxis.grid(True)
+    ax.yaxis.grid(True)
+
+    # Formatting Date
+    date_format = DateFormatter('%d-%m-%Y')
+    ax.xaxis.set_major_formatter(date_format)
+    fig.autofmt_xdate()
+
+    # Adding indicators
+    Add_Upper_and_Lower(ax, df)
+    Add_MA(ax, df, time)
+
+    fig.tight_layout()
+    ax.legend(loc=0)
+    plt.show()
 
 
 def DateFrame_To_Excel(stock):
@@ -123,11 +174,31 @@ def DateFrame_To_Excel(stock):
         return WriteToExcel(df_daily, df_weekly, df_monthly, stock)
 
     except:
-        raise Exception("invalid stock symbol !")
+        raise Exception("invalid symbol !")
 
 
 
 stock = input("enter the stock symbol: \n").upper()
 Excel_File ,df = DateFrame_To_Excel(stock)
-VisualizingChart(Excel_File, "stock")
+
+choice = input("Please select timeframe for candle stick chart: \n1 - for daily\n2 - for weekly\n3 - for monthly\n")
+if choice == "1":
+    time = "daily"
+elif choice == "2":
+    time = "weekly"
+elif choice == "3":
+    time = "monthly"
+else:
+    print("invalid input... displaying without candle stick")
+
+if choice == "1" or choice == "2" or choice == "3":
+    Candle_Stick(Excel_File, stock, time)
+
+VisualizingChart(Excel_File, stock)
+
+
+
+
+
+
 

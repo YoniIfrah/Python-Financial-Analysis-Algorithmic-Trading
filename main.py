@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 import pandas_datareader.data as web
 from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
+import numpy as np
+
+def Add_EWMA(ax, df):
+    df["EWMA-12"] = df["Close"].ewm(span=12).mean()
+    ax.plot(df['Date'], df['EWMA-12'], ls='-.', label='EWMA 12', alpha=0.5)
+
 
 def Add_Upper_and_Lower(ax, df):
     # upper = 13MA + 2*std(13)
@@ -54,6 +60,7 @@ def VisualizingChart(Excel_File, stock):
             # Adding indicators
             Add_Upper_and_Lower(chart, df)
             Add_MA(chart, df, arr[k])
+            Add_EWMA(chart, df)
 
 
             #adding grid to the graph
@@ -92,12 +99,21 @@ def WriteToExcel(df_daily, df_weekly, df_monthly, stock):
         #in order to make a few sheets we must use ExcelWriter
         writer = pd.ExcelWriter(ExcelName, engine='xlsxwriter')
 
+        # Adding stock history
+
         df_monthly.to_excel(writer, sheet_name='monthly')
 
         df_weekly.to_excel(writer, sheet_name='weekly')
 
         df_daily.to_excel(writer, sheet_name='daily')
 
+        # Adding stock description
+
+        df_daily.describe().to_excel(writer, sheet_name='describe daily')
+
+        df_weekly.describe().to_excel(writer, sheet_name='describe weekly')
+
+        df_monthly.describe().to_excel(writer, sheet_name='describe monthly')
 
         for message in ['monthly', 'weekly', 'daily']:
             # changing the size of the columns to be bigger (that are date and volume)
@@ -151,9 +167,13 @@ def Candle_Stick(Excel_File, stock, time):
     ax.xaxis.set_major_formatter(date_format)
     fig.autofmt_xdate()
 
+
+
     # Adding indicators
+    Add_EWMA(ax, df)
     Add_Upper_and_Lower(ax, df)
     Add_MA(ax, df, time)
+
 
     fig.tight_layout()
     ax.legend(loc=0)
@@ -193,12 +213,9 @@ else:
 
 if choice == "1" or choice == "2" or choice == "3":
     Candle_Stick(Excel_File, stock, time)
+    #need to add volume function !!!
+    #need to add live function !!!
+
 
 VisualizingChart(Excel_File, stock)
-
-
-
-
-
-
 

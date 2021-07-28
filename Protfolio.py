@@ -60,7 +60,8 @@ def set_All_Pos_Vals(stocks):
     protfolio_val = pd.concat(all_pos_vals, axis=1)
     protfolio_val.columns = [item+' Pos Val' for item in symbols]
     protfolio_val['Total Pos'] = protfolio_val.sum(axis=1)
-    return protfolio_val
+    cumulative_return = 100 * (protfolio_val['Total Pos'][-1] / protfolio_val['Total Pos'][0] - 1)
+    return protfolio_val, cumulative_return
 
 def Total_Pos_Plot(protfolio_val):
     protfolio_val['Total Pos'].plot(figsize=(12, 8))
@@ -72,7 +73,22 @@ def Stocks_Pos_plot(protfolio_val):
     plt.title('Total Portfolio Value')
     plt.show()
 
+def set_Daily_Return(protfolio_val):
+    protfolio_val['Daily Return'] = protfolio_val['Total Pos'].pct_change(1)
 
+def set_SR(protfolio_val):
+    SR = protfolio_val['Daily Return'].mean() / protfolio_val['Daily Return'].std()
+    # analyzed sharp ratio
+    # daily
+    daily_ASR = (252**0.5) *SR
+
+    # weekly
+    weekly_ASR = (52**0.5) *SR
+
+    # monthly
+    monthly_ASR = (12**0.5) *SR
+
+    print("Analyzed sharp ratio\nDaily:{}\nWeekly:{}\nMonthly:{}".format(daily_ASR,weekly_ASR,monthly_ASR))
 
 
 symbols = []
@@ -83,7 +99,9 @@ Add_Normed_Return(stockList)
 Add_Allocation(stockList)
 invest = Add_Position_Values(stockList)
 
-protfolio_val = set_All_Pos_Vals(stockList)
+protfolio_val, cumulative_return = set_All_Pos_Vals(stockList)
 Total_Pos_Plot(protfolio_val)
 Stocks_Pos_plot(protfolio_val)
-
+set_Daily_Return(protfolio_val)
+print("The total amount you made while investing is: ", cumulative_return+invest)
+set_SR(protfolio_val)

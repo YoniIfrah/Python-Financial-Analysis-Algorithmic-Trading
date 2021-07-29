@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 
-def set_Symbols():
+def set_Symbols(symbols):
     print("Enter 4 symbols")
     i = 0
     while i < 4:
@@ -18,16 +18,17 @@ def set_Symbols():
             symbols.append(symbol)
         i += 1
 
-def set_DataFrames(symbols):
-    # Dates
-    start = datetime.datetime(2020, 1, 1)
-    end = datetime.datetime(2021, 1, 1)
+def set_DataFrames(symbols, start, end):
 
     stockList = []
     errCheck = 0
     try:
         for item in symbols:
-            stockList.append(web.DataReader(item, 'yahoo', start, end))
+            if start != None and end != None:
+                stockList.append(web.DataReader(item, 'yahoo', start, end))
+            else:
+                stockList.append(web.DataReader(item, 'yahoo'))
+
             errCheck += 1
 
     except:
@@ -90,18 +91,25 @@ def set_SR(protfolio_val):
 
     print("Analyzed sharp ratio\nDaily:{}\nWeekly:{}\nMonthly:{}".format(daily_ASR,weekly_ASR,monthly_ASR))
 
-
+# Dates
+start = datetime.datetime(2020, 1, 1)
+end = datetime.datetime(2021, 1, 1)
 symbols = []
-set_Symbols()
 
-stockList = set_DataFrames(symbols)
-Add_Normed_Return(stockList)
-Add_Allocation(stockList)
-invest = Add_Position_Values(stockList)
 
-protfolio_val, cumulative_return = set_All_Pos_Vals(stockList)
-Total_Pos_Plot(protfolio_val)
-Stocks_Pos_plot(protfolio_val)
-set_Daily_Return(protfolio_val)
-print("The total amount you made while investing is: ", cumulative_return+invest)
-set_SR(protfolio_val)
+def drive():
+    set_Symbols(symbols)
+
+    stockList = set_DataFrames(symbols)
+    Add_Normed_Return(stockList)
+    Add_Allocation(stockList)
+    invest = Add_Position_Values(stockList)
+
+    protfolio_val, cumulative_return = set_All_Pos_Vals(stockList)
+
+    set_Daily_Return(protfolio_val)
+    print("The total amount you made while investing is: ", cumulative_return+invest)
+    set_SR(protfolio_val)
+
+    Total_Pos_Plot(protfolio_val)
+    Stocks_Pos_plot(protfolio_val)

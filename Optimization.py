@@ -1,7 +1,6 @@
 from Protfolio import set_Symbols,set_DataFrames, start, end, symbols
 import pandas as pd
 import numpy as np
-import pandas_datareader.data as web
 
 import matplotlib.pyplot as plt
 
@@ -42,27 +41,85 @@ def Read_np_Arr(symbols):
         i += 1
     return arr
 
+def Reset_Simulation(num_ports):
+    all_weights = np.zeros((num_ports, len(stocks.columns)))
+    ret_arr = np.zeros(num_ports)
+    vola_arr = np.zeros(num_ports)
+    sharpe_arr = np.zeros(num_ports)
+
+    return all_weights, ret_arr, vola_arr, sharpe_arr
+
+def Random_Weights(symbols):
+    weights = np.array((np.random.random(4)))
+    weights = weights / np.sum(weights)
+
+    return weights
+
+def Simulations(num_ports):
+
+    for index in range(num_ports):
+        # Weights
+        weights = Random_Weights(symbols)
+
+        # Save the weights
+        all_weights[index, :] = weights
+
+        # Expected Return
+        ret_arr[index] = np.sum((log_ret.mean() * weights) * 252)
+
+        # Expected Volatility
+        vola_arr[index] = np.sqrt(np.dot(weights.T, np.dot(log_ret.cov() * 252, weights)))
+
+        # Sharp Ratio
+        sharpe_arr[index] = ret_arr[index] / vola_arr[index]
 
 
-#symbols = ['AAPL', 'RRR', 'FB', 'GOOGL']
+def Plot_Display(ret_arr, vola_arr, sharpe_arr):
+    """
+    Here we will get the display of the sharpe ratio "bullet" as more we get bullet curve the better
+    stocks combination we have
+    :param ret_arr: Object, numpy array of return values
+    :param vola_arr: Object, numpy array of volatility values
+    :param sharpe_arr: Object, numpy array of the sharpe ratios
+    :return: None
+    """
+    max_sr_ret = ret_arr[sharpe_arr.argmax()]
+    max_sr_vola = vola_arr[sharpe_arr.argmax()]
+    plt.figure(figsize=(10,6))
+    plt.scatter(vola_arr, ret_arr, c=sharpe_arr, cmap='plasma')
+    plt.colorbar(label='Sharpe Ratio')
+    plt.xlabel("Volatility")
+    plt.ylabel("Return")
+    plt.scatter(max_sr_vola, max_sr_ret, c='red', s=50, edgecolors='black')
+    plt.show()
+
+
+
+# Default stocks combination
+#symbols = ['AAPL', 'TSLA', 'FB', 'MSFT']
+
 set_Symbols(symbols)
 stocksList = set_DataFrames(symbols, start, end)
 stocks = stocksDF(stocksList, symbols)
 log_ret = np.log(stocks / stocks.shift(1))
 
-weights = Read_np_Arr(symbols)
+# Number of tries to find the best allocation
+num_ports = 5000
+#np.random.seed(101)
 
-# Expected Return
-ep_ret = np.sum((log_ret.mean() * weights) * 252)
-print(ep_ret)
-
-# Expected Volatility
-exp_vola = np.sqrt(np.dot(weights.T, np.dot(log_ret.cov()*252, weights)))
-print(exp_vola)
-
-# Sharp Ratio
-SR = ep_ret / exp_vola
-print(SR)
+all_weights, ret_arr, vola_arr, sharpe_arr = Reset_Simulation(num_ports)
 
 
+def drive():
+    Simulations(num_ports)
 
+    print("share ratio max: ", sharpe_arr.max())
+
+    print("share ratio argmax: ",sharpe_arr.argmax())
+
+    #Getting the best allocation out of the all the simulations
+    print(all_weights[sharpe_arr.argmax(), :])
+
+    Plot_Display(ret_arr, vola_arr, sharpe_arr)
+
+drive()

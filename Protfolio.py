@@ -79,7 +79,7 @@ def set_Daily_Return(protfolio_val):
 
 def set_SR(protfolio_val):
     SR = protfolio_val['Daily Return'].mean() / protfolio_val['Daily Return'].std()
-    # analyzed sharp ratio
+    # analyzed sharpe ratio
     # daily
     daily_ASR = (252**0.5) *SR
 
@@ -89,11 +89,12 @@ def set_SR(protfolio_val):
     # monthly
     monthly_ASR = (12**0.5) *SR
 
-    print("Analyzed sharp ratio\nDaily:{}\nWeekly:{}\nMonthly:{}".format(daily_ASR,weekly_ASR,monthly_ASR))
+    print("Analyzed sharpe ratio\nDaily:{}\nWeekly:{}\nMonthly:{}".format(daily_ASR,weekly_ASR,monthly_ASR))
+
 
 # Dates
-start = datetime.datetime(2020, 1, 1)
-end = datetime.datetime(2021, 1, 1)
+start = datetime.datetime(2020, 6, 1)
+end = datetime.datetime(2021, 6, 1)
 symbols = []
 
 

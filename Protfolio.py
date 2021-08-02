@@ -18,7 +18,7 @@ def set_Symbols(symbols):
             symbols.append(symbol)
         i += 1
 
-def set_DataFrames(symbols, start, end):
+def set_DataFrames(symbols, start=None, end=None):
 
     stockList = []
     errCheck = 0

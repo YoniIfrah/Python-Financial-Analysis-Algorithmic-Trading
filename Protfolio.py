@@ -70,8 +70,12 @@ def Total_Pos_Plot(protfolio_val):
     plt.show()
 
 def Stocks_Pos_plot(protfolio_val):
-    protfolio_val.drop('Total Pos', axis=1).plot(figsize=(12, 8))
-    plt.title('Total Portfolio Value')
+    if 'Daily Return' in protfolio_val.columns:
+        protfolio_val.drop(['Total Pos', 'Daily Return'], axis=1).plot(figsize=(12, 8))
+    else:
+        protfolio_val.drop('Total Pos', axis=1).plot(figsize=(12, 8))
+
+    plt.title('Stocks Portfolio Value')
     plt.show()
 
 def set_Daily_Return(protfolio_val):

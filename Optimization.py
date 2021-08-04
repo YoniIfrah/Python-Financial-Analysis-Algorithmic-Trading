@@ -1,6 +1,7 @@
 from Protfolio import set_Symbols,set_DataFrames, start, end, symbols
 import pandas as pd
 import numpy as np
+from scipy.optimize import minimize
 
 import matplotlib.pyplot as plt
 
@@ -91,17 +92,82 @@ def Plot_Display(ret_arr, vola_arr, sharpe_arr):
     plt.xlabel("Volatility")
     plt.ylabel("Return")
     plt.scatter(max_sr_vola, max_sr_ret, c='red', s=50, edgecolors='black')
+
+    # adding grid to the graph
+    plt.grid()
     plt.show()
 
 
+def get_ret_vola_sr(weights):
+    weights = np.array(weights)
+    ret = np.sum(log_ret.mean() * weights) * 252
+    vola = np.sqrt(np.dot(weights.T, np.dot(log_ret.cov() * 252, weights)))
+    sr = ret / vola
 
-# Default stocks combination
-#symbols = ['AAPL', 'TSLA', 'FB', 'MSFT']
+    return np.array([ret, vola, sr])
+
+def neg_sharpe(weights):
+    return (get_ret_vola_sr(weights)[2] * (-1))
+
+def check_sum(weights):
+    # Return 0 if the sum of the weights is 1
+    return np.sum(weights) - 1
+
+
+def Frontier(init_guess, bounds):
+    max_sr_ret = ret_arr[sharpe_arr.argmax()]
+    max_sr_vola = vola_arr[sharpe_arr.argmax()]
+
+    frontier_y = np.linspace(max_sr_vola-0.05, max_sr_ret+0.15, 25)
+
+    def minimize_volatility(weights):
+        return get_ret_vola_sr(weights)[1]
+
+    frontier_volatility = []
+    for possible_return in frontier_y:
+        cons = ({'type': 'eq', 'fun': check_sum},
+                {'type': 'eq', 'fun': lambda w: get_ret_vola_sr(w)[0]-possible_return})
+        result = minimize(minimize_volatility, init_guess, method='SLSQP', bounds=bounds, constraints=cons)
+        frontier_volatility.append(result['fun'])
+
+    return frontier_volatility, frontier_y
+
+
+def Plot_Frontier(frontier_volatility, frontier_y):
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(vola_arr, ret_arr, c=sharpe_arr, cmap='plasma')
+    plt.colorbar(label='Sharpe Ratio')
+    plt.xlabel("Volatility")
+    plt.ylabel("Return")
+
+    # Red Dot
+    plt.scatter(vola_arr[sharpe_arr.argmax()], ret_arr[sharpe_arr.argmax()], c='red', s=50, edgecolors='black')
+
+    # Linespace
+    plt.plot(frontier_volatility, frontier_y, 'g--', linewidth=3)
+
+    # Grid
+    plt.grid()
+
+    plt.show()
+
+def set_Opt_Result():
+    cons = ({'type': 'eq', 'fun': check_sum})
+    bounds = ((0, 1), (0, 1), (0, 1), (0, 1))
+    init_guess = [0.25, 0.25, 0.25, 0.25]
+    opt_results = minimize(neg_sharpe, init_guess, method='SLSQP', bounds=bounds, constraints=cons)
+    return opt_results, init_guess, bounds
+
+
 
 set_Symbols(symbols)
-stocksList = set_DataFrames(symbols, start, end)
+stocksList = set_DataFrames(symbols)
 stocks = stocksDF(stocksList, symbols)
 log_ret = np.log(stocks / stocks.shift(1))
+
+
+
 
 # Number of tries to find the best allocation
 num_ports = 5000
@@ -115,11 +181,18 @@ def drive():
 
     print("share ratio max: ", sharpe_arr.max())
 
-    print("share ratio argmax: ",sharpe_arr.argmax())
+    print("share ratio argmax: ", sharpe_arr.argmax())
+
+    opt_results, init_guess, bounds = set_Opt_Result()
+
+    print("get_ret_vola_sr(opt_results.x): ", get_ret_vola_sr(opt_results.x))
+
+    frontier_volatility, frontier_y = Frontier(init_guess, bounds)
+
+    Plot_Frontier(frontier_volatility, frontier_y)
 
     #Getting the best allocation out of the all the simulations
-    print(all_weights[sharpe_arr.argmax(), :])
+    print("all_weights[sharpe_arr.argmax(), :]: ", all_weights[sharpe_arr.argmax(), :])
 
-    Plot_Display(ret_arr, vola_arr, sharpe_arr)
 
 drive()

@@ -1,26 +1,55 @@
-from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
 import os
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
-from mplfinance.original_flavor import candlestick_ohlc
-from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 import numpy as np
 
-def Add_EWMA(ax, df):
-    df["EWMA-12"] = df["Close"].ewm(span=12).mean()
-    ax.plot(df['Date'], df['EWMA-12'], ls='-.', label='EWMA 12', alpha=0.5)
+from mplfinance.original_flavor import candlestick_ohlc
+from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
 
-def Add_Upper_and_Lower(ax, df):
+def Add_Volume(ax, df, time):
+    """
+    Here we will define subplot that include x axis which represent dates of the stock
+    y axis which will represent the volume of the stock
+    :param ax: Object, subplot which will display the volume of the stock
+    :param df: dictionary, dataframe
+    :return: None
+    """
+
+    dates = [x for x in df['Date']]
+    dates = np.asarray(dates)
+    volume = [x for x in df['Volume']]
+    volume = np.asarray(volume)
+
+    width = 0.5
+    if time == 'weekly':
+        width = width * 8
+    elif time == 'monthly':
+        width = width * 30
+
+    pos = df['Open'] - df['Close'] < 0
+    neg = df['Open'] - df['Close'] > 0
+    ax.bar(dates[pos], volume[pos], color='green', width=width, align='center')
+    ax.bar(dates[neg], volume[neg], color='red', width=width, align='center')
+
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Volume')
+
+def Add_EWMA(ax, df, num=13):
+    df["EWMA-"+str(num)] = df["Close"].ewm(span=num).mean()
+    ax.plot(df['Date'], df["EWMA-"+str(num)] , ls='-.', label="EWMA-"+str(num), alpha=0.5)
+
+
+def Add_Upper_and_Lower(ax, df, num=13):
     # upper = 13MA + 2*std(13)
-    ax.plot(df['Date'], df.rolling(window=13).mean()['Close'] + 2 * df['Close'].rolling(13).std(),
-            ls='--', label='Upper', alpha=0.3)
+    ax.plot(df['Date'], df.rolling(window=num).mean()['Close'] + 2 * df['Close'].rolling(13).std(),
+            ls='--', label='Upper '+str(num), alpha=0.3)
 
     # lower = 13MA - 2*std(13)
-    ax.plot(df['Date'], df.rolling(window=13).mean()['Close'] - 2 * df['Close'].rolling(13).std(),
-            ls='--', label='Lower', alpha=0.3)
+    ax.plot(df['Date'], df.rolling(window=num).mean()['Close'] - 2 * df['Close'].rolling(13).std(),
+            ls='--', label='Lower '+str(num), alpha=0.3)
 
 def Add_MA(ax, df, time):
     if time == 'weekly' or time == 'daily':
@@ -78,6 +107,19 @@ def VisualizingChart(Excel_File, stock):
     plt.tight_layout()
     plt.show()
 
+def select_Path():
+    """
+    the function will return where the file is located in the computer according to what the user selected
+    :return: String, the file path
+    """
+    filePath = filedialog.askdirectory()+"\\"#choosing where to locate the excel file with GUI
+
+    if filePath == "\\": #if the user press cancel for selecting file location
+        print("The file will be saved where is the python file")
+        filePath = ""
+
+    return filePath
+
 
 def WriteToExcel(df_daily, df_weekly, df_monthly, stock):
     """
@@ -87,13 +129,8 @@ def WriteToExcel(df_daily, df_weekly, df_monthly, stock):
     :return:saved excel named by the stock
     """
 
-    filePath = filedialog.askdirectory()+"\\"#choosing where to locate the excel file with GUI
 
-    if filePath == "\\": #if the user press cancel for selecting file location
-        print("The file will be saved where is the python file")
-        filePath = ""
-
-    ExcelName = filePath+stock+".xlsx"
+    ExcelName = select_Path()+stock+".xlsx"
     print("trying to write to excel file...")
     try:
         #in order to make a few sheets we must use ExcelWriter
@@ -149,34 +186,37 @@ def Candle_Stick(Excel_File, stock, time):
     ohlc['Date'] = ohlc['Date'].apply(date2num)
     ohlc = ohlc.astype(float)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
 
-    candlestick_ohlc(ax, ohlc.values, width=0.8, colorup='green', colordown='red', alpha=0.8)
+    candlestick_ohlc(ax[0], ohlc.values, width=0.8, colorup='green', colordown='red', alpha=0.8)
 
     # Setting labels & titles
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
+    ax[0].set_xlabel('Date')
+    ax[0].set_ylabel('Price')
     fig.suptitle(time + ' candlestick chart of ' + stock)
 
     # adding grid to the graph
-    ax.xaxis.grid(True)
-    ax.yaxis.grid(True)
+    ax[0].xaxis.grid(True)
+    ax[0].yaxis.grid(True)
+    ax[1].xaxis.grid(True)
+    ax[1].yaxis.grid(True)
 
     # Formatting Date
     date_format = DateFormatter('%d-%m-%Y')
-    ax.xaxis.set_major_formatter(date_format)
+    ax[0].xaxis.set_major_formatter(date_format)
     fig.autofmt_xdate()
 
-
+    # Adding Volume
+    Add_Volume(ax[1], df, time)
 
     # Adding indicators
-    Add_EWMA(ax, df)
-    Add_Upper_and_Lower(ax, df)
-    Add_MA(ax, df, time)
+    Add_EWMA(ax[0], df)
+    Add_Upper_and_Lower(ax[0], df)
+    Add_MA(ax[0], df, time)
 
 
     fig.tight_layout()
-    ax.legend(loc=0)
+    ax[0].legend(loc=0)
     plt.show()
 
 
@@ -194,11 +234,11 @@ def DateFrame_To_Excel(stock):
         return WriteToExcel(df_daily, df_weekly, df_monthly, stock)
 
     except:
-        raise Exception("invalid symbol !")
-
+        raise Exception("invalid symbol or open file!")
 
 
 stock = input("enter the stock symbol: \n").upper()
+
 Excel_File ,df = DateFrame_To_Excel(stock)
 
 choice = input("Please select timeframe for candle stick chart: \n1 - for daily\n2 - for weekly\n3 - for monthly\n")
@@ -213,9 +253,12 @@ else:
 
 if choice == "1" or choice == "2" or choice == "3":
     Candle_Stick(Excel_File, stock, time)
-    #need to add volume function !!!
-    #need to add live function !!!
 
 
-VisualizingChart(Excel_File, stock)
+
+
+
+
+
+
 

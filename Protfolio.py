@@ -26,6 +26,13 @@ def set_DataFrames(symbols, start=None, end=None):
         for item in symbols:
             if start != None and end != None:
                 stockList.append(web.DataReader(item, 'yahoo', start, end))
+
+            elif start != None and end == None:
+                stockList.append(web.DataReader(item, 'yahoo', start=start))
+
+            elif start == None and end != None:
+                stockList.append(web.DataReader(item, 'yahoo', end=end))
+
             else:
                 stockList.append(web.DataReader(item, 'yahoo'))
 

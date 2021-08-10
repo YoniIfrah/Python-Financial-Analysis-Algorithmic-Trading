@@ -2,7 +2,7 @@ from Protfolio import set_Symbols,set_DataFrames, start, end, symbols
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
-
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 def stocksDF(stockList, symbols):
@@ -58,7 +58,7 @@ def Random_Weights(symbols):
 
 def Simulations(num_ports):
 
-    for index in range(num_ports):
+    for index in tqdm(range(num_ports), desc="Processing...\t"):
         # Weights
         weights = Random_Weights(symbols)
 

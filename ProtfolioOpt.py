@@ -142,10 +142,10 @@ def CR():
 
 def final_plot():
     btstats = pd.DataFrame()
-    btstats['sortino'] = Sortino_Ratio()
-    btstats['sharpe'] = SR()
-    btstats['maxdd'] = MD()
-    btstats['calmar'] = CR()
+    btstats['Sortino'] = Sortino_Ratio()
+    btstats['Sharpe'] = SR()
+    btstats['Max Drawdown'] = MD()
+    btstats['Calmar'] = CR()
 
     (df + 1).cumprod().plot(figsize=(8, 5))
     plt.table(cellText=np.round(btstats.values, 2), colLabels=btstats.columns,

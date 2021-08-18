@@ -249,7 +249,7 @@ elif choice == "2":
 elif choice == "3":
     time = "monthly"
 else:
-    print("invalid input... displaying without candle stick")
+    print("invalid input...")
 
 if choice == "1" or choice == "2" or choice == "3":
     print(df, "\n------------------------------\n")

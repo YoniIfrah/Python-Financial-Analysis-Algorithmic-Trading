@@ -4,7 +4,7 @@ from tkinter import filedialog
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
 import numpy as np
-
+import yahoo_fin.stock_info as si
 from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
@@ -252,8 +252,11 @@ else:
     print("invalid input... displaying without candle stick")
 
 if choice == "1" or choice == "2" or choice == "3":
-    Candle_Stick(Excel_File, stock, time)
+    print(df, "\n------------------------------\n")
+    print(df.describe())
+    print("{" + "\n".join("{!r}: {!r},".format(k, v) for k, v in si.get_quote_table(stock).items()) + "}")
 
+    Candle_Stick(Excel_File, stock, time)
 
 
 

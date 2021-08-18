@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas_datareader.data as web
 import numpy as np
 import yahoo_fin.stock_info as si
+
 from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
@@ -17,13 +18,15 @@ def Add_Volume(ax, df, time):
     :param df: dictionary, dataframe
     :return: None
     """
+    Number_Of_Greens = 0
+    Number_Of_Reds = 0
 
     dates = [x for x in df['Date']]
     dates = np.asarray(dates)
     volume = [x for x in df['Volume']]
     volume = np.asarray(volume)
 
-    width = 0.5
+    width = 0.5 # value for daily
     if time == 'weekly':
         width = width * 8
     elif time == 'monthly':
@@ -31,6 +34,14 @@ def Add_Volume(ax, df, time):
 
     pos = df['Open'] - df['Close'] < 0
     neg = df['Open'] - df['Close'] > 0
+    for i in pos:
+        if i:
+            Number_Of_Greens += 1
+        else:
+            Number_Of_Reds += 1
+    print("Number of green bars: ", Number_Of_Greens)
+    print("Number of red bars: ", Number_Of_Reds)
+
     ax.bar(dates[pos], volume[pos], color='green', width=width, align='center')
     ax.bar(dates[neg], volume[neg], color='red', width=width, align='center')
 
@@ -67,45 +78,7 @@ def Add_MA(ax, df, time):
             ax.plot(df['Date'], df.rolling(window=13).mean()['Close'], label='Close 13 MA', alpha=0.7, linewidth=0.5)
 
 
-def VisualizingChart(Excel_File, stock):
-    """
-    This function will display the chart of the stock by different time frames with matplotlib
-    :param Excel_File: string, The path of the excel file
-    :param stock: string, Stock name
-    :return: None
-    """
-    print("please wait building charts from excel file...")
-    figure, axis = plt.subplots(2, 2, figsize=(12,8)) # figure is object and axis is the 2x2 graphs matrix
-    k = 0
-    arr = ['monthly', 'weekly', 'daily', 'daily']  # list of the time frames
 
-    for i in axis:
-        for chart in i:
-            # take each time different dataframe from the excel file
-            df = pd.read_excel(Excel_File, sheet_name=arr[k])
-            # if you want to add another lines to the chart add another line of code like this
-            chart.plot(df['Date'], df['Close'], linewidth=1, label='Close')
-
-            # Adding indicators
-            Add_Upper_and_Lower(chart, df)
-            Add_MA(chart, df, arr[k])
-            Add_EWMA(chart, df)
-
-
-            #adding grid to the graph
-            chart.xaxis.grid(True)
-            chart.yaxis.grid(True)
-
-            #setting labels of the graphs
-            chart.set_xlabel("Dates")
-            chart.set_ylabel("$ Price")
-            chart.set_title(stock + " " + arr[k])
-            chart.legend(loc=0) # add the label string inside the chart
-            k += 1
-
-    print("Done !")
-    plt.tight_layout()
-    plt.show()
 
 def select_Path():
     """
@@ -180,6 +153,7 @@ def Candle_Stick(Excel_File, stock, time):
     """
     df = pd.read_excel(Excel_File, sheet_name=time)
 
+
     # Extracting Data for plotting
     ohlc = df.loc[:, ['Date', 'Open', 'High', 'Low', 'Close']]
     ohlc['Date'] = pd.to_datetime(ohlc['Date'])
@@ -214,10 +188,31 @@ def Candle_Stick(Excel_File, stock, time):
     Add_Upper_and_Lower(ax[0], df)
     Add_MA(ax[0], df, time)
 
-
     fig.tight_layout()
     ax[0].legend(loc=0)
     plt.show()
+
+def User_Choice():
+    while True:
+        choice = input("Please select timeframe: \n1 - for daily\n2 - for weekly\n3 - for monthly\n0 - to quit the program\n")
+
+        if choice == "1":
+            time = "daily"
+            return choice, time
+        elif choice == "2":
+            time = "weekly"
+            return choice, time
+
+        elif choice == "3":
+            time = "monthly"
+            return choice, time
+
+        elif choice == "0":
+            print("exiting the program")
+            return None, None
+        else:
+            print("invalid input please try again...\n")
+
 
 
 def DateFrame_To_Excel(stock):
@@ -231,6 +226,7 @@ def DateFrame_To_Excel(stock):
         df_daily = web.DataReader(stock, 'yahoo')
         df_monthly = web.get_data_yahoo(stock, interval='m')
         df_weekly = web.get_data_yahoo(stock, interval='w')
+
         return WriteToExcel(df_daily, df_weekly, df_monthly, stock)
 
     except:
@@ -241,15 +237,7 @@ stock = input("enter the stock symbol: \n").upper()
 
 Excel_File ,df = DateFrame_To_Excel(stock)
 
-choice = input("Please select timeframe for candle stick chart: \n1 - for daily\n2 - for weekly\n3 - for monthly\n")
-if choice == "1":
-    time = "daily"
-elif choice == "2":
-    time = "weekly"
-elif choice == "3":
-    time = "monthly"
-else:
-    print("invalid input...")
+choice, time = User_Choice()
 
 if choice == "1" or choice == "2" or choice == "3":
     print(df, "\n------------------------------\n")
@@ -257,11 +245,3 @@ if choice == "1" or choice == "2" or choice == "3":
     print("{" + "\n".join("{!r}: {!r},".format(k, v) for k, v in si.get_quote_table(stock).items()) + "}")
 
     Candle_Stick(Excel_File, stock, time)
-
-
-
-
-
-
-
-

@@ -1,3 +1,5 @@
+import datetime
+
 import pandas_datareader.data as web
 import numpy as np
 import pandas as pd
@@ -11,6 +13,9 @@ def setData():
     initializing function where the user need to enter the amount of stocks and their symbol
     :return: Dataframe
     """
+    start = datetime.datetime.now() - datetime.timedelta(days=365)
+    end = datetime.datetime.now()
+
     symbols = []
     while True:
         num = int(input("how many stocks do you wish to enter? (the minimum is 2)\n"))
@@ -28,7 +33,7 @@ def setData():
         else:
             symbols.append(symbol)
         i += 1
-    stocks = web.DataReader(symbols,'yahoo')['Adj Close']
+    stocks = web.DataReader(symbols,'yahoo', start=start, end=end)['Adj Close']
 
     # Removing invalid data from invalid stocks
     df = stocks.dropna(how='all', axis=1)

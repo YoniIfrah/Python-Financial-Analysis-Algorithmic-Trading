@@ -12,10 +12,7 @@ from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocato
 def Add_Doji(ax, df):
     Ratio_Hammer = df['Close'].mean() * 0.05
     N = len(df.index)
-    H = df['High']
-    C = df['Close']
-    O = df['Open']
-    L = df['Low']
+
     Green_Doji = []
     Red_Doji = []
 

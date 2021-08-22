@@ -10,9 +10,7 @@ from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
 def Add_Doji(ax, df):
-    Ratio_Hammer = df['Close'].mean() * 0.05
     N = len(df.index)
-
     Green_Doji = []
     Red_Doji = []
 
@@ -26,8 +24,18 @@ def Add_Doji(ax, df):
             Green_Doji.append(df['Low'][i]-1)
             Red_Doji.append(np.nan)
 
+        # Inverted Hammer
+        elif ((H-L)> 3 * (O-C)) and ((H-C)/(.001+H-L)) > 0.6 and ((H-O) / (.001+H-L)) > 0.6 and O < C:
+            Green_Doji.append(df['Low'][i]-1)
+            Red_Doji.append(np.nan)
+
         # Hanging Man
         elif (((H-L)>4*(O-C))and((C-L)/(.001+H-L)>=0.75)and((O-L)/(.001+H-L)>=.075)) and C < O:
+            Red_Doji.append(df['High'][i]+1)
+            Green_Doji.append(np.nan)
+
+        # Shooting star
+        elif ((H-L) > 4 * (O-C)) and (((H-C) / (.001+H-L)) >=0.75) and (((H-O) / (.001+H-L)) >= 0.75) and C < O:
             Red_Doji.append(df['High'][i]+1)
             Green_Doji.append(np.nan)
 
@@ -35,9 +43,8 @@ def Add_Doji(ax, df):
             Green_Doji.append(np.nan)
             Red_Doji.append(np.nan)
 
-    ax.plot(df['Date'], Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.9)
-    ax.plot(df['Date'], Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.9)
-
+    ax.plot(df['Date'], Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.6)
+    ax.plot(df['Date'], Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.6)
 
 def Add_Volume(ax, df, time):
     """

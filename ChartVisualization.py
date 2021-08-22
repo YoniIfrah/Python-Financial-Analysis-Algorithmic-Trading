@@ -20,12 +20,12 @@ def Add_Doji(ax, df):
         O = df['Open'][i]
         L = df['Low'][i]
         # Hammer
-        if (((H-L)>3*(O-C)and((C-L)/(.001+H-L)>0.6)and((O-L)/(.001+H-L)>0.6))) and O < C:
+        if (((H-L)>3*(O-C)and((C-L)/(.001+H-L)>0.6)and((O-L)/(.001+H-L)>0.6))) and O < C and ((H-L) * 0.15) < abs(O-C):
             Green_Doji.append(df['Low'][i]-1)
             Red_Doji.append(np.nan)
 
         # Inverted Hammer
-        elif ((H-L)> 3 * (O-C)) and ((H-C)/(.001+H-L)) > 0.6 and ((H-O) / (.001+H-L)) > 0.6 and O < C:
+        elif ((H-L)> 3 * (O-C)) and ((H-C)/(.001+H-L)) > 0.6 and ((H-O) / (.001+H-L)) > 0.6 and O < C and ((H-L) * 0.15) < abs(O-C):
             Green_Doji.append(df['Low'][i]-1)
             Red_Doji.append(np.nan)
 

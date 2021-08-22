@@ -9,6 +9,38 @@ import yahoo_fin.stock_info as si
 from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
+def Add_Doji(ax, df):
+    Ratio_Hammer = df['Close'].mean() * 0.05
+    N = len(df.index)
+    H = df['High']
+    C = df['Close']
+    O = df['Open']
+    L = df['Low']
+    Green_Doji = []
+    Red_Doji = []
+
+    for i in range(N):
+        H = df['High'][i]
+        C = df['Close'][i]
+        O = df['Open'][i]
+        L = df['Low'][i]
+        # Hammer
+        if (((H-L)>3*(O-C)and((C-L)/(.001+H-L)>0.6)and((O-L)/(.001+H-L)>0.6))) and O < C:
+            Green_Doji.append(df['Low'][i]-1)
+            Red_Doji.append(np.nan)
+
+        # Hanging Man
+        elif (((H-L)>4*(O-C))and((C-L)/(.001+H-L)>=0.75)and((O-L)/(.001+H-L)>=.075)) and C < O:
+            Red_Doji.append(df['High'][i]+1)
+            Green_Doji.append(np.nan)
+
+        else:
+            Green_Doji.append(np.nan)
+            Red_Doji.append(np.nan)
+
+    ax.plot(df['Date'], Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.9)
+    ax.plot(df['Date'], Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.9)
+
 
 def Add_Volume(ax, df, time):
     """
@@ -48,12 +80,12 @@ def Add_Volume(ax, df, time):
     ax.set_xlabel('Date')
     ax.set_ylabel('Volume')
 
-def Add_EWMA(ax, df, num=13):
+def Add_EWMA(ax, df, num=233):
     df["EWMA-"+str(num)] = df["Close"].ewm(span=num).mean()
     ax.plot(df['Date'], df["EWMA-"+str(num)] , ls='-.', label="EWMA-"+str(num), alpha=0.5)
 
 
-def Add_Upper_and_Lower(ax, df, num=13):
+def Add_Upper_and_Lower(ax, df, num=20):
     # upper = 13MA + 2*std(13)
     ax.plot(df['Date'], df.rolling(window=num).mean()['Close'] + 2 * df['Close'].rolling(13).std(),
             ls='--', label='Upper '+str(num), alpha=0.3)
@@ -187,6 +219,7 @@ def Candle_Stick(Excel_File, stock, time):
     Add_EWMA(ax[0], df)
     Add_Upper_and_Lower(ax[0], df)
     Add_MA(ax[0], df, time)
+    Add_Doji(ax[0], df)
 
     fig.tight_layout()
     ax[0].legend(loc=0)

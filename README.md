@@ -5,9 +5,9 @@ Data Visualization - using python with pandas and matplotlib libraries to read a
 The user need to enter a stock symbol.
 The program will ask the user where where he/she wish to save the excel file,
 Then user will need to select timeframe (daily/ weekly/ monthly).
-For example here is the output for "AAPL" symbol and weekly timeframe:
+For example here is the output for "GOOGL" symbol and weekly timeframe:
 
-<img src="images/aapl2.png" width="900">
+<img src="images/GOOGL.png" width="900">
 
 Also the program print more information about the stock such as PE Ratio, Average Volume, Market Cap and more on the terminal
 

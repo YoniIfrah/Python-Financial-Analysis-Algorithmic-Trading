@@ -9,10 +9,79 @@ import yahoo_fin.stock_info as si
 from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
+
+def Bullish_Candel_To_DataFrame(df):
+    N = len(df.index)
+    df['bullish'] = None
+
+    for i in range(N):
+        H = df['High'][i]
+        C = df['Close'][i]
+        O = df['Open'][i]
+        L = df['Low'][i]
+
+        # Hammer
+        if (((H - L) > 3 * (O - C) and ((C - L) / (.001 + H - L) > 0.6) and (
+                (O - L) / (.001 + H - L) > 0.6))) and O < C and ((H - L) * 0.15) < abs(O - C):
+            df['bullish'][i] = "^"
+            if i + 1 != N and df['Close'][i + 1] > df['Open'][i + 1]:
+                df['bullish'][i] = "^^"
+
+
+        # Inverted Hammer
+        elif ((H - L) > 3 * (O - C)) and ((H - C) / (.001 + H - L)) > 0.6 and (
+                (H - O) / (.001 + H - L)) > 0.6 and O < C and ((H - L) * 0.15) < abs(O - C):
+            df['bullish'][i] = "^"
+            if i + 1 != N and df['Close'][i + 1] > df['Open'][i + 1]:
+                df['bullish'][i] = "^^"
+
+
+
+def Add_indicators_to_DataFrame(df_daily, df_weekly, df_monthly):
+    """
+    Here I'm adding the indicators details to the dataframes which will be later in the excel file
+    :param df_daily: Dictionary, the daily dataframe of the stock
+    :param df_weekly: Dictionary, the weekly dataframe of the stock
+    :param df_monthly: Dictionary, the monthly dataframe of the stock
+    :return:
+    """
+
+    # Lower 20 of the bollinger
+
+    df_daily['lower20'] = df_daily.rolling(window=20).mean()['Close'] + 2 * df_daily['Close'].rolling(13).std()
+    df_weekly['lower20'] = df_weekly.rolling(window=20).mean()['Close'] + 2 * df_weekly['Close'].rolling(13).std()
+    df_monthly['lower20'] = df_monthly.rolling(window=20).mean()['Close'] + 2 * df_monthly['Close'].rolling(13).std()
+
+    # EMA 233
+
+    df_daily['EMA233'] = df_daily["Close"].ewm(span=233).mean()
+    df_weekly['EMA233'] = df_weekly["Close"].ewm(span=233).mean()
+    df_monthly['EMA233'] = df_monthly["Close"].ewm(span=233).mean()
+
+    # Doji Candle for long at the moment
+
+    Bullish_Candel_To_DataFrame(df_daily)
+    Bullish_Candel_To_DataFrame(df_weekly)
+    Bullish_Candel_To_DataFrame(df_monthly)
+
+
+
+
 def Add_Doji(ax, df):
+    """
+    Adding Doji candles to the plot with confirmation candle
+    which will confirm the bullish or bearish behavior of the chart
+    :param ax:Object, matplotlib plot object
+    :param df:Dictionary, the dataframe of the selected time frame by the user
+    :return:
+    """
+
     N = len(df.index)
     Green_Doji = []
     Red_Doji = []
+    Strong_Green_Doji=[]
+    Strong_Red_Doji=[]
+
 
     for i in range(N):
         H = df['High'][i]
@@ -22,29 +91,71 @@ def Add_Doji(ax, df):
         # Hammer
         if (((H-L)>3*(O-C)and((C-L)/(.001+H-L)>0.6)and((O-L)/(.001+H-L)>0.6))) and O < C and ((H-L) * 0.15) < abs(O-C):
             Green_Doji.append(df['Low'][i]-1)
+
+            # Confirmation candle
+            if i+1 != N and df['Close'][i+1] > df['Open'][i+1]:
+                Strong_Green_Doji.append(df['Low'][i]-1)
+            else:
+                Strong_Green_Doji.append(np.nan)
+
             Red_Doji.append(np.nan)
+            Strong_Red_Doji.append(np.nan)
 
         # Inverted Hammer
         elif ((H-L)> 3 * (O-C)) and ((H-C)/(.001+H-L)) > 0.6 and ((H-O) / (.001+H-L)) > 0.6 and O < C and ((H-L) * 0.15) < abs(O-C):
             Green_Doji.append(df['Low'][i]-1)
+
+            # Confirmation candle
+            if i+1 != N and df['Close'][i+1] > df['Open'][i+1]:
+                Strong_Green_Doji.append(df['Low'][i]-1)
+            else:
+                Strong_Green_Doji.append(np.nan)
+
             Red_Doji.append(np.nan)
+            Strong_Red_Doji.append(np.nan)
+
 
         # Hanging Man
-        elif (((H-L)>4*(O-C))and((C-L)/(.001+H-L)>=0.75)and((O-L)/(.001+H-L)>=.075)) and C < O:
+        elif (((H-L)>4*(O-C)) and ((C-L)/(.001+H-L) >= 0.75)and((O-L)/(.001+H-L) >= .075)) and C < O:
             Red_Doji.append(df['High'][i]+1)
+
+            # Confirmation candle
+            if i+1 != N and df['Open'][i+1] > df['Close'][i+1]:
+                Strong_Red_Doji.append(df['High'][i]-1)
+            else:
+                Strong_Red_Doji.append(np.nan)
+
             Green_Doji.append(np.nan)
+            Strong_Green_Doji.append(np.nan)
 
         # Shooting star
-        elif ((H-L) > 4 * (O-C)) and (((H-C) / (.001+H-L)) >=0.75) and (((H-O) / (.001+H-L)) >= 0.75) and C < O:
+        elif ((H-L) > 4 * (O-C)) and (((H-C) / (.001+H-L)) >= 0.75) and (((H-O) / (.001+H-L)) >= 0.75) and C < O:
             Red_Doji.append(df['High'][i]+1)
+
+            # Confirmation candle
+            if i+1 != N and df['Open'][i+1] > df['Close'][i+1]:
+                Strong_Red_Doji.append(df['High'][i]-1)
+            else:
+                Strong_Red_Doji.append(np.nan)
+
             Green_Doji.append(np.nan)
+            Strong_Green_Doji.append(np.nan)
 
         else:
             Green_Doji.append(np.nan)
             Red_Doji.append(np.nan)
+            Strong_Green_Doji.append(np.nan)
+            Strong_Red_Doji.append(np.nan)
 
-    ax.plot(df['Date'], Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.6)
-    ax.plot(df['Date'], Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.6)
+    # Adding green arrows
+    ax.plot(df['Date'], Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.3)
+    ax.plot(df['Date'], Strong_Green_Doji, marker='^', markersize=8, color='green', linestyle='None', alpha=0.6)
+
+
+    # Adding red arrows
+    ax.plot(df['Date'], Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.3)
+    ax.plot(df['Date'], Strong_Red_Doji, marker='v', markersize=8, color='r', linestyle='None', alpha=0.6)
+
 
 def Add_Volume(ax, df, time):
     """
@@ -263,6 +374,9 @@ def DateFrame_To_Excel(stock):
         df_daily = web.DataReader(stock, 'yahoo')
         df_monthly = web.get_data_yahoo(stock, interval='m')
         df_weekly = web.get_data_yahoo(stock, interval='w')
+
+        # Adding indicators and doji candles for df_daily, df_weekly, df_monthly
+        Add_indicators_to_DataFrame(df_daily, df_monthly, df_weekly)
 
         return WriteToExcel(df_daily, df_weekly, df_monthly, stock)
 

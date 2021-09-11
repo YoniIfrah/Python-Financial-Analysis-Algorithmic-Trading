@@ -10,9 +10,9 @@ from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
 
-def Bullish_Candel_To_DataFrame(df):
+def Candel_State_To_DataFrame(df):
     N = len(df.index)
-    df['bullish'] = None
+    df['State'] = None
 
     for i in range(N):
         H = df['High'][i]
@@ -23,18 +23,31 @@ def Bullish_Candel_To_DataFrame(df):
         # Hammer
         if (((H - L) > 3 * (O - C) and ((C - L) / (.001 + H - L) > 0.6) and (
                 (O - L) / (.001 + H - L) > 0.6))) and O < C and ((H - L) * 0.15) < abs(O - C):
-            df['bullish'][i] = "^"
+            df['State'][i] = "^"
+            # confirmation candle
             if i + 1 != N and df['Close'][i + 1] > df['Open'][i + 1]:
-                df['bullish'][i] = "^^"
+                df['State'][i] = "^^"
 
 
         # Inverted Hammer
         elif ((H - L) > 3 * (O - C)) and ((H - C) / (.001 + H - L)) > 0.6 and (
                 (H - O) / (.001 + H - L)) > 0.6 and O < C and ((H - L) * 0.15) < abs(O - C):
-            df['bullish'][i] = "^"
+            df['State'][i] = "^"
+            # confirmation candle
             if i + 1 != N and df['Close'][i + 1] > df['Open'][i + 1]:
-                df['bullish'][i] = "^^"
+                df['State'][i] = "^^"
 
+        # Hanging man
+        elif (((H-L)>4*(O-C)) and ((C-L)/(.001+H-L) >= 0.75)and((O-L)/(.001+H-L) >= .075)) and C < O:
+            df['State'][i] = "v"
+            if i + 1 != N and df['Open'][i + 1] > df['Close'][i + 1]:
+                df['State'][i] = "vv"
+
+        # Shooting star
+        elif ((H-L) > 4 * (O-C)) and (((H-C) / (.001+H-L)) >= 0.75) and (((H-O) / (.001+H-L)) >= 0.75) and C < O:
+            df['State'][i] = "v"
+            if i+1 != N and df['Open'][i+1] > df['Close'][i+1]:
+                df['State'][i] = "vv"
 
 
 def Add_indicators_to_DataFrame(df_daily, df_weekly, df_monthly):
@@ -60,9 +73,9 @@ def Add_indicators_to_DataFrame(df_daily, df_weekly, df_monthly):
 
     # Doji Candle for long at the moment
 
-    Bullish_Candel_To_DataFrame(df_daily)
-    Bullish_Candel_To_DataFrame(df_weekly)
-    Bullish_Candel_To_DataFrame(df_monthly)
+    Candel_State_To_DataFrame(df_daily)
+    Candel_State_To_DataFrame(df_weekly)
+    Candel_State_To_DataFrame(df_monthly)
 
 
 

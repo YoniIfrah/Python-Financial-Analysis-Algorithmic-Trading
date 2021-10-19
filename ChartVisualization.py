@@ -10,6 +10,41 @@ from mplfinance.original_flavor import candlestick_ohlc
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DateLocator, MONDAY
 
 
+def isFarFromLevel(l, levels):
+    return np.sum([abs(l-x) < np.mean(df['High'] - df['Low']) for x in levels]) == 0
+
+
+def Add_Support(df, ax):
+    levels = []
+
+    def isSupport(df, i):
+        return df['Low'][i] < df['Low'][i - 1] and df['Low'][i] < df['Low'][i + 1] and df['Low'][i + 1] < df['Low'][i + 2] and df['Low'][i - 1] < df['Low'][i - 2]
+
+    for i in range(2, df.shape[0] - 2):
+        if isSupport(df, i):
+            l = df['Low'][i]
+            if isFarFromLevel(l, levels):
+                levels.append((i, l))
+    for level in levels:
+        ax.hlines(level[1], xmin=df['Date'][level[0]], xmax=max(df['Date']), colors='green', ls='-', alpha=0.5)
+
+def Add_Resistance(df, ax):
+    levels = []
+
+    def isResistance(df, i):
+        return df['High'][i] > df['High'][i - 1] and df['High'][i] > df['High'][i + 1] and df['High'][i + 1] > df['High'][i + 2] and df['High'][i - 1] > df['High'][i - 2]
+
+    for i in range(2, df.shape[0] - 2):
+        if isResistance(df, i):
+            l = df['High'][i]
+            if isFarFromLevel(l, levels):
+                levels.append((i, l))
+    for level in levels:
+        ax.hlines(level[1], xmin=df['Date'][level[0]], xmax=max(df['Date']), colors='red', ls='-', alpha=0.5)
+
+
+
+
 def Candel_State_To_DataFrame(df):
     N = len(df.index)
     df['State'] = None
@@ -27,6 +62,7 @@ def Candel_State_To_DataFrame(df):
             # confirmation candle
             if i + 1 != N and df['Close'][i + 1] > df['Open'][i + 1]:
                 df['State'][i] = "^^"
+
 
 
         # Inverted Hammer
@@ -76,6 +112,8 @@ def Add_indicators_to_DataFrame(df_daily, df_weekly, df_monthly):
     Candel_State_To_DataFrame(df_daily)
     Candel_State_To_DataFrame(df_weekly)
     Candel_State_To_DataFrame(df_monthly)
+
+
 
 
 
@@ -348,6 +386,8 @@ def Candle_Stick(Excel_File, stock, time):
     Add_Upper_and_Lower(ax[0], df)
     Add_MA(ax[0], df, time)
     Add_Doji(ax[0], df)
+    Add_Support(df, ax[0])
+    Add_Resistance(df, ax[0])
 
     fig.tight_layout()
     ax[0].legend(loc=0)

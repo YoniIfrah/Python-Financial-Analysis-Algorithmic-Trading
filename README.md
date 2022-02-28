@@ -16,7 +16,7 @@ Also the program print more information about the stock such as PE Ratio, Averag
 # ProtfolioOpt:
 The user will need to enter number of stocks he/she want to have on the protfolio and then to enter the symbols of the stocks.
 After that the program will caculate the Sharpe, Sortino and Calmar Ratios and also the Max Drawndown.
-The programe will display protfolio case of 1 dollar investing from the last year until today
+The program will display protfolio case of 1 dollar investing from the last year until today
 
 
 <img src="images/ProtfolioOpt.png" width="1000">
